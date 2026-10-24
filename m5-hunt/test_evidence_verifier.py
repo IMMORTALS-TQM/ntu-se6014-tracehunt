@@ -226,15 +226,15 @@ class TestEvidenceVerifier(unittest.TestCase):
             found=["doc-1"],
         )
         ledger2, response2 = make_fetch_fixture(
-            index="windows_security",
+            index="windows-security",
             wanted=["doc-2"],
             found=["doc-2"],
         )
 
         ledger2["seq"] = 2
         response2["ledger_seq"] = 2
-        response2["result"]["index"] = "windows_security"
-        response2["arguments"]["index"] = "windows_security"
+        response2["result"]["index"] = "windows-security"
+        response2["arguments"]["index"] = "windows-security"
         ledger2["query"]["request"]["body"]["ids"] = ["doc-2"]
         ledger2["query_hash"] = query_hash(ledger2["query"])
 
@@ -246,7 +246,7 @@ class TestEvidenceVerifier(unittest.TestCase):
         claims = [
             make_claim(claim_id="claim-1"),
             make_claim(
-                index="windows_security",
+                index="windows-security",
                 doc_id="doc-2",
                 ledger_seq=2,
                 claim_id="claim-2",
@@ -261,6 +261,14 @@ class TestEvidenceVerifier(unittest.TestCase):
             alternatives_tested=True,
         )
 
+        self.assertTrue(
+            result["validation"]["ok"],
+            result["validation"]["issues"],
+        )
+        self.assertEqual(
+            result["validation"]["verified_claim_ids"],
+            ["claim-1", "claim-2"],
+        )
         self.assertEqual(result["verdict"], "inconclusive")
         self.assertTrue(
             any("conflict" in reason.lower() for reason in result["reasons"]),

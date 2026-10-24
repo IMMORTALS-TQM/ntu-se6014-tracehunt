@@ -131,17 +131,54 @@ class TestReport(unittest.TestCase):
         self.assertEqual(report["model_usage"]["input_tokens"], 10)
         self.assertEqual(report["model_usage"]["output_tokens"], 5)
 
-    def test_incomplete_source_forces_inconclusive(self):
+    def test_incomplete_required_source_forces_inconclusive(self):
         _, _, _, _, coverage, _ = _fixture()
-        coverage["zeek"]["complete"] = False
+        coverage["sysmon"]["complete"] = False
+
         report = _build(source_coverage=coverage)
+
         self.assertEqual(report["verdict"], "inconclusive")
 
-    def test_uncovered_window_forces_inconclusive(self):
+    def test_uncovered_required_window_forces_inconclusive(self):
         _, _, _, _, coverage, _ = _fixture()
-        coverage["zeek"]["end"] = "2026-10-23T14:20:00+08:00"
+        coverage["sysmon"]["end"] = "2026-10-23T14:20:00+08:00"
+
         report = _build(source_coverage=coverage)
+
         self.assertEqual(report["verdict"], "inconclusive")
+
+    def test_incomplete_optional_source_does_not_block_verdict(self):
+        _, _, _, _, coverage, _ = _fixture()
+        coverage["zeek"]["complete"] = False
+
+        report = _build(source_coverage=coverage)
+
+        self.assertEqual(report["verdict"], "confirmed")
+
+    def test_missing_required_source_coverage_forces_inconclusive(self):
+        _, _, _, _, coverage, _ = _fixture()
+        coverage.pop("sysmon")
+
+        report = _build(source_coverage=coverage)
+
+        self.assertEqual(report["verdict"], "inconclusive")
+        markdown = render_markdown(report)
+        self.assertIn(
+            "Missing source coverage for required source sysmon",
+            markdown,
+        )
+
+    def test_sysmon_only_coverage_is_accepted(self):
+        _, _, limits, _, coverage, _ = _fixture()
+        limits["indices"] = ["sysmon"]
+
+        report = _build(
+            m4_limits=limits,
+            source_coverage={"sysmon": coverage["sysmon"]},
+        )
+
+        self.assertEqual(report["verdict"], "confirmed")
+        self.assertEqual(list(report["source_coverage"]), ["sysmon"])
 
     def test_incomplete_plan_forces_inconclusive(self):
         _, _, _, _, _, plan = _fixture()

@@ -99,20 +99,40 @@ def _validate_limits(limits: Any) -> dict:
 def _validate_coverage(
     coverage: Any,
     required_window: Mapping[str, str],
+    required_sources: list[str],
 ) -> tuple[dict, list[str]]:
     if not isinstance(coverage, Mapping):
         raise ValueError("source_coverage must be an object")
 
-    if set(coverage) != set(SOURCE_INDICES):
-        raise ValueError(
-            "source_coverage must describe all three configured sources"
-        )
-
     if not isinstance(required_window, Mapping):
         raise ValueError("investigation_window must be an object")
 
-    window_start = _timestamp(required_window.get("start"), "investigation_window.start")
-    window_end = _timestamp(required_window.get("end"), "investigation_window.end")
+    if (
+        not isinstance(required_sources, list)
+        or not required_sources
+        or any(
+            not isinstance(source, str) or source not in SOURCE_INDICES
+            for source in required_sources
+        )
+        or len(set(required_sources)) != len(required_sources)
+    ):
+        raise ValueError(
+            "investigation_coverage.required_sources must be a "
+            "non-empty list of unique configured sources"
+        )
+
+    unknown_sources = set(coverage) - set(SOURCE_INDICES)
+    if unknown_sources:
+        raise ValueError(
+            f"Unknown source coverage indices: {sorted(unknown_sources)}"
+        )
+
+    window_start = _timestamp(
+        required_window.get("start"), "investigation_window.start"
+    )
+    window_end = _timestamp(
+        required_window.get("end"), "investigation_window.end"
+    )
 
     if window_end <= window_start:
         raise ValueError("investigation_window.end must be after start")
@@ -120,8 +140,7 @@ def _validate_coverage(
     normalized = {}
     blockers = []
 
-    for index in SOURCE_INDICES:
-        source = coverage[index]
+    for index, source in coverage.items():
         if not isinstance(source, Mapping):
             raise ValueError(f"Coverage for {index} must be an object")
 
@@ -143,12 +162,24 @@ def _validate_coverage(
             "basis": basis,
         }
 
-        if not complete:
-            blockers.append(f"Source coverage is incomplete for {index}")
+        # Metadata for optional sources is retained and validated, but
+        # only required sources can block the investigation verdict.
+        if index in required_sources:
+            if not complete:
+                blockers.append(
+                    f"Source coverage is incomplete for {index}"
+                )
 
-        if start > window_start or end < window_end:
+            if start > window_start or end < window_end:
+                blockers.append(
+                    f"Declared coverage for {index} "
+                    "does not span the investigation window"
+                )
+
+    for index in required_sources:
+        if index not in coverage:
             blockers.append(
-                f"Declared coverage for {index} does not span the investigation window"
+                f"Missing source coverage for required source {index}"
             )
 
     return normalized, blockers
@@ -310,14 +341,18 @@ def build_run_report(
     from token_counter import normalize_model_usage
     normalized_usage = normalize_model_usage(model_usage)
 
-    coverage, coverage_blockers = _validate_coverage(
-        source_coverage, investigation_window
-    )
-
     if not isinstance(investigation_coverage, Mapping):
         raise ValueError("investigation_coverage must be a mapping")
 
     investigation_coverage = dict(investigation_coverage)
+    required_sources = investigation_coverage.get("required_sources")
+
+    coverage, coverage_blockers = _validate_coverage(
+        source_coverage,
+        investigation_window,
+        required_sources,
+    )
+
     investigation_blockers = investigation_coverage.get("blockers", [])
 
     if not isinstance(investigation_blockers, list):
