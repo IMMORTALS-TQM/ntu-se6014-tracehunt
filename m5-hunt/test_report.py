@@ -98,6 +98,18 @@ def _build(**overrides):
         "runtime_seconds": 1.5,
         "model_usage": {"prompt_tokens": 10, "completion_tokens": 5},
         "source_coverage": coverage,
+                "investigation_coverage": {
+            "required_sources": ["sysmon"],
+            "required_window": window,
+            "complete": True,
+            "sources": {
+                "sysmon": {
+                    "covered": True,
+                    "complete_query_count": 1,
+                }
+            },
+            "blockers": [],
+        },
         "investigation_window": window,
         "plan": plan,
         "claims": [claim],

@@ -272,6 +272,7 @@ def build_run_report(
     model_usage: dict | None,
     source_coverage: Mapping,
     investigation_window: Mapping,
+    investigation_coverage: Mapping,
     plan: list[dict],
     claims: list[dict],
     verifier: Any,
@@ -312,6 +313,22 @@ def build_run_report(
     coverage, coverage_blockers = _validate_coverage(
         source_coverage, investigation_window
     )
+
+    if not isinstance(investigation_coverage, Mapping):
+        raise ValueError("investigation_coverage must be a mapping")
+
+    investigation_coverage = dict(investigation_coverage)
+    investigation_blockers = investigation_coverage.get("blockers", [])
+
+    if not isinstance(investigation_blockers, list):
+        raise ValueError("investigation_coverage.blockers must be a list")
+
+    if investigation_coverage.get("complete") is not True:
+        if not investigation_blockers:
+            investigation_blockers = [
+                "Actual investigation query coverage is incomplete"
+            ]
+
     normalized_plan, plan_blockers = _validate_plan(plan)
     normalized_claims = _validate_claims(claims)
 
@@ -332,6 +349,7 @@ def build_run_report(
 
     reasons = list(verification.get("reasons") or [])
     reasons.extend(coverage_blockers)
+    reasons.extend(investigation_blockers)
     reasons.extend(plan_blockers)
 
     if validation.get("ok") is not True:
@@ -362,6 +380,7 @@ def build_run_report(
         "runtime_seconds": runtime_seconds,
         "model_usage": normalized_usage,
         "source_coverage": coverage,
+        "investigation_coverage": investigation_coverage,
         "plan": normalized_plan,
         "claims": normalized_claims,
         "tool_results_complete": tool_results_complete,
@@ -429,6 +448,28 @@ def render_markdown(report: Mapping) -> str:
         lines.append("No factual claims were exported.")
 
     lines.extend(["", "## Verdict notes", ""])
+    investigation_coverage = report.get("investigation_coverage")
+    if investigation_coverage is not None:
+        lines.extend([
+            "",
+            "## Investigation query coverage",
+            "",
+            f"- Complete: `{investigation_coverage['complete']}`",
+            f"- Required sources: "
+            f"`{', '.join(investigation_coverage['required_sources'])}`",
+            f"- Required window: "
+            f"`{investigation_coverage['required_window']['start']}` "
+            f"to `{investigation_coverage['required_window']['end']}`",
+            "",
+            "| Source | Complete coverage | Complete queries |",
+            "|---|---|---|",
+        ])
+
+        for source, item in investigation_coverage["sources"].items():
+            lines.append(
+                f"| {source} | {item['covered']} "
+                f"| {item['complete_query_count']} |"
+            )
     if report["verdict_reasons"]:
         lines.extend(f"- {reason}" for reason in report["verdict_reasons"])
     else:

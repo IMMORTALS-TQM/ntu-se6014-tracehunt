@@ -63,9 +63,14 @@ def make_fetch_fixture(index="sysmon", wanted=None, found=None):
     return ledger, response
 
 
-def make_claim(index="sysmon", doc_id="doc-1", ledger_seq=1):
+def make_claim(
+    index="sysmon",
+    doc_id="doc-1",
+    ledger_seq=1,
+    claim_id="claim-1",
+):
     return {
-        "id": "claim-1",
+        "id": claim_id,
         "statement": "A matching process event was retrieved.",
         "citations": [
             {
@@ -213,6 +218,75 @@ class TestEvidenceVerifier(unittest.TestCase):
         )
 
         self.assertEqual(result["verdict"], "inconclusive")
+
+    def test_different_supporting_and_contradicting_claims_are_inconclusive(self):
+        ledger1, response1 = make_fetch_fixture(
+            index="sysmon",
+            wanted=["doc-1"],
+            found=["doc-1"],
+        )
+        ledger2, response2 = make_fetch_fixture(
+            index="windows_security",
+            wanted=["doc-2"],
+            found=["doc-2"],
+        )
+
+        ledger2["seq"] = 2
+        response2["ledger_seq"] = 2
+        response2["result"]["index"] = "windows_security"
+        response2["arguments"]["index"] = "windows_security"
+        ledger2["query"]["request"]["body"]["ids"] = ["doc-2"]
+        ledger2["query_hash"] = query_hash(ledger2["query"])
+
+        verifier = EvidenceVerifier(
+            [ledger1, ledger2],
+            [response1, response2],
+        )
+
+        claims = [
+            make_claim(claim_id="claim-1"),
+            make_claim(
+                index="windows_security",
+                doc_id="doc-2",
+                ledger_seq=2,
+                claim_id="claim-2",
+            ),
+        ]
+
+        result = verifier.select_verdict(
+            claims,
+            supporting_claim_ids=["claim-1"],
+            contradicting_claim_ids=["claim-2"],
+            investigation_complete=True,
+            alternatives_tested=True,
+        )
+
+        self.assertEqual(result["verdict"], "inconclusive")
+        self.assertTrue(
+            any("conflict" in reason.lower() for reason in result["reasons"]),
+            result["reasons"],
+        )
+
+    def test_no_supporting_or_contradicting_evidence_is_inconclusive(self):
+        ledger, response = make_fetch_fixture()
+        verifier = EvidenceVerifier([ledger], [response])
+
+        result = verifier.select_verdict(
+            [make_claim()],
+            supporting_claim_ids=[],
+            contradicting_claim_ids=[],
+            investigation_complete=True,
+            alternatives_tested=True,
+        )
+
+        self.assertEqual(result["verdict"], "inconclusive")
+        self.assertTrue(
+            any(
+                "not enough verified evidence" in reason.lower()
+                for reason in result["reasons"]
+            ),
+            result["reasons"],
+        )
 
     def test_changed_query_hash_blocks_final_verdict(self):
         ledger, response = make_fetch_fixture()

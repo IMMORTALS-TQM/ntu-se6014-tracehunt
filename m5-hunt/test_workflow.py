@@ -13,6 +13,11 @@ sys.path.insert(0, str(M6_ROOT))
 
 from tracehunt_experiment.compare import evaluate as m6_evaluate
 
+M4_ROOT = Path(__file__).resolve().parents[1] / "m4-mcp"
+sys.path.insert(0, str(M4_ROOT))
+
+from tracehunt_mcp.ledger import EvidenceLedger
+
 from types import SimpleNamespace
 
 from workflow import HuntWorkflow
@@ -128,8 +133,17 @@ class FakeToolSet:
                 "index": index,
                 "body": {
                     "query": {
-                        "range": {
-                            "@timestamp": {"gte": start, "lt": end}
+                        "bool": {
+                            "filter": [
+                                {
+                                    "range": {
+                                        "@timestamp": {
+                                            "gte": start,
+                                            "lt": end,
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 },
@@ -254,12 +268,17 @@ class TestHuntWorkflow(unittest.TestCase):
             report = workflow.execute(
                 make_plan(),
                 make_claim(),
+                required_sources=["sysmon"],
                 supporting_claim_ids=["claim-1"],
                 contradicting_claim_ids=[],
                 alternatives_tested=True,
             )
 
             self.assertEqual(report["verdict"], "confirmed")
+            self.assertTrue(report["investigation_coverage"]["complete"])
+            self.assertTrue(
+                report["investigation_coverage"]["sources"]["sysmon"]["covered"]
+            )
             self.assertTrue((output / "ledger.jsonl").exists())
             self.assertTrue((output / "responses.jsonl").exists())
             self.assertTrue((output / "run.json").exists())
@@ -297,6 +316,7 @@ class TestHuntWorkflow(unittest.TestCase):
             report = workflow.execute(
                 make_plan(),
                 make_claim(),
+                required_sources=["sysmon"],
                 supporting_claim_ids=["claim-1"],
                 contradicting_claim_ids=[],
                 alternatives_tested=True,
@@ -314,6 +334,7 @@ class TestHuntWorkflow(unittest.TestCase):
             report = workflow.execute(
                 make_plan(),
                 make_claim(doc_id="invented-doc"),
+                required_sources=["sysmon"],
                 supporting_claim_ids=["claim-1"],
                 contradicting_claim_ids=[],
                 alternatives_tested=True,
@@ -341,6 +362,7 @@ class TestHuntWorkflow(unittest.TestCase):
                 workflow.execute(
                     plan,
                     [],
+                    required_sources=["sysmon"],
                     supporting_claim_ids=[],
                     contradicting_claim_ids=[],
                     alternatives_tested=False,
@@ -352,6 +374,132 @@ class TestHuntWorkflow(unittest.TestCase):
                 "",
             )
 
+
+    def test_missing_required_source_forces_inconclusive(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            workflow = make_workflow(Path(temporary) / "run-output")
+
+            report = workflow.execute(
+                make_plan(index="sysmon"),
+                make_claim(index="sysmon"),
+                required_sources=["sysmon", "windows-security"],
+                supporting_claim_ids=["claim-1"],
+                contradicting_claim_ids=[],
+                alternatives_tested=True,
+            )
+
+            self.assertEqual(report["verdict"], "inconclusive")
+            self.assertFalse(report["investigation_coverage"]["complete"])
+            self.assertFalse(
+                report["investigation_coverage"]["sources"]
+                ["windows-security"]["covered"]
+            )
+
+    def test_short_query_window_forces_inconclusive(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            workflow = make_workflow(Path(temporary) / "run-output")
+            plan = make_plan()
+            plan[0]["arguments"]["start"] = "2026-10-23T14:05:00+08:00"
+            plan[0]["arguments"]["end"] = "2026-10-23T14:25:00+08:00"
+
+            report = workflow.execute(
+                plan,
+                make_claim(),
+                required_sources=["sysmon"],
+                supporting_claim_ids=["claim-1"],
+                contradicting_claim_ids=[],
+                alternatives_tested=True,
+            )
+
+            self.assertEqual(report["verdict"], "inconclusive")
+            self.assertFalse(report["investigation_coverage"]["complete"])
+            self.assertFalse(
+                report["investigation_coverage"]["sources"]["sysmon"]["covered"]
+            )
+
+    def test_gap_between_query_windows_forces_inconclusive(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            workflow = make_workflow(Path(temporary) / "run-output")
+            plan = make_plan()
+            first = dict(plan[0])
+            first["arguments"] = dict(plan[0]["arguments"])
+            first["id"] = "first-window"
+            first["arguments"]["end"] = "2026-10-23T14:10:00+08:00"
+
+            second = dict(plan[0])
+            second["arguments"] = dict(plan[0]["arguments"])
+            second["id"] = "second-window"
+            second["arguments"]["start"] = "2026-10-23T14:20:00+08:00"
+
+            report = workflow.execute(
+                [first, second],
+                make_claim(),
+                required_sources=["sysmon"],
+                supporting_claim_ids=["claim-1"],
+                contradicting_claim_ids=[],
+                alternatives_tested=True,
+            )
+
+            self.assertEqual(report["verdict"], "inconclusive")
+            self.assertFalse(report["investigation_coverage"]["complete"])
+            self.assertFalse(
+                report["investigation_coverage"]["sources"]["sysmon"]["covered"]
+            )
+
+
+
+    def test_real_m4_ledger_is_initialized_when_file_is_missing(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "fresh-run"
+            output.mkdir()
+            ledger_path = output / "ledger.jsonl"
+
+            ledger = EvidenceLedger(
+                str(ledger_path),
+                "workflow-test-run",
+            )
+
+            # The real M4 EvidenceLedger creates the parent directory,
+            # but does not create the ledger file in its constructor.
+            self.assertFalse(ledger_path.exists())
+
+            config = SimpleNamespace(
+                run_id="workflow-test-run",
+                ledger_path=str(ledger_path),
+                indices=tuple(LIMITS["indices"]),
+                default_size=LIMITS["default_size"],
+                max_size=LIMITS["max_size"],
+                max_window_hours=LIMITS["max_window_hours"],
+                request_timeout_s=LIMITS["request_timeout_s"],
+                max_scan=LIMITS["max_scan"],
+                max_doc_ids=LIMITS["max_doc_ids"],
+                max_seq_steps=LIMITS["max_seq_steps"],
+                max_agg_buckets=LIMITS["max_agg_buckets"],
+            )
+            tools = SimpleNamespace(ledger=ledger, cfg=config)
+
+            workflow = HuntWorkflow(
+                tools,
+                output,
+                run_id=config.run_id,
+                run_kind="typed_api_smoke",
+                backend="fixture",
+                dataset_id="workflow-test-dataset",
+                freeze_id="workflow-test-freeze",
+                m4_limits=LIMITS,
+                source_coverage=COVERAGE,
+                investigation_window=WINDOW,
+                model_usage=None,
+            )
+
+            self.assertTrue(ledger_path.exists())
+            self.assertEqual(
+                ledger_path.read_text(encoding="utf-8"),
+                "",
+            )
+            self.assertEqual(workflow.responses, [])
+
+
     def test_m5_export_is_readable_by_m6_comparator(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "run-output"
@@ -360,6 +508,7 @@ class TestHuntWorkflow(unittest.TestCase):
             report = workflow.execute(
                 make_plan(),
                 make_claim(),
+                required_sources=["sysmon"],
                 supporting_claim_ids=["claim-1"],
                 contradicting_claim_ids=[],
                 alternatives_tested=True,
@@ -382,6 +531,72 @@ class TestHuntWorkflow(unittest.TestCase):
             self.assertTrue(metrics["summary_completeness_consistent"])
             self.assertEqual(metrics["citation_linkage"], 1.0)
             self.assertEqual(metrics["archived_citation_coverage"], 1.0)
+
+
+    def test_nonempty_ledger_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "existing-run"
+            output.mkdir()
+            ledger_path = output / "ledger.jsonl"
+            ledger_path.write_text('{"seq":1}\n', encoding="utf-8")
+
+            ledger = EvidenceLedger(
+                str(ledger_path),
+                "workflow-test-run",
+            )
+            config = SimpleNamespace(
+                run_id="workflow-test-run",
+                ledger_path=str(ledger_path),
+                indices=tuple(LIMITS["indices"]),
+                default_size=LIMITS["default_size"],
+                max_size=LIMITS["max_size"],
+                max_window_hours=LIMITS["max_window_hours"],
+                request_timeout_s=LIMITS["request_timeout_s"],
+                max_scan=LIMITS["max_scan"],
+                max_doc_ids=LIMITS["max_doc_ids"],
+                max_seq_steps=LIMITS["max_seq_steps"],
+                max_agg_buckets=LIMITS["max_agg_buckets"],
+            )
+            tools = SimpleNamespace(ledger=ledger, cfg=config)
+
+            with self.assertRaisesRegex(ValueError, "fresh, empty M4 ledger"):
+                HuntWorkflow(
+                    tools,
+                    output,
+                    run_id=config.run_id,
+                    run_kind="typed_api_smoke",
+                    backend="fixture",
+                    dataset_id="workflow-test-dataset",
+                    freeze_id="workflow-test-freeze",
+                    m4_limits=LIMITS,
+                    source_coverage=COVERAGE,
+                    investigation_window=WINDOW,
+                    model_usage=None,
+                )
+
+            self.assertEqual(
+                ledger_path.read_text(encoding="utf-8"),
+                '{"seq":1}\n',
+            )
+
+
+    def test_existing_report_output_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "existing-run"
+            output.mkdir()
+            (output / "report.md").write_text(
+                "keep existing report",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(FileExistsError, "report.md"):
+                make_workflow(output)
+
+            self.assertEqual(
+                (output / "report.md").read_text(encoding="utf-8"),
+                "keep existing report",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -501,20 +501,14 @@ class EvidenceVerifier:
 
         verdict = "inconclusive"
 
-        if (
-            not reasons
-            and supporting.isdisjoint(contradicting)
-            and supporting
-        ):
+        if supporting and contradicting:
+            reasons.append(
+                "Verified supporting and contradicting evidence conflict"
+            )
+        elif not reasons and supporting:
             verdict = "confirmed"
-        elif (
-            not reasons
-            and supporting.isdisjoint(contradicting)
-            and contradicting
-        ):
+        elif not reasons and contradicting:
             verdict = "rejected"
-        elif supporting & contradicting:
-            reasons.append("Evidence is classified as both supporting and contradicting")
 
         if not reasons and verdict == "inconclusive":
             reasons.append("There is not enough verified evidence to decide")

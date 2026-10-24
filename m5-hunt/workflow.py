@@ -10,6 +10,7 @@ from coverage import CoverageChecklist
 from evidence_verifier import EvidenceVerifier
 from report import build_run_report, write_report
 from state_machine import HuntPhase, HuntStateMachine
+from datetime import datetime
 
 
 SOURCE_INDICES = ("windows-security", "sysmon", "zeek")
@@ -105,6 +106,196 @@ def _result_complete(tool_name: str, result: Any) -> bool:
     return "error" not in result
 
 
+def _parse_timestamp(value):
+    """Parse an ISO-8601 timestamp and require an explicit timezone."""
+    if not isinstance(value, str) or not value:
+        return None
+
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+
+    return parsed
+
+
+def _find_timestamp_ranges(value):
+    """Find @timestamp range clauses anywhere inside an Elasticsearch query."""
+    found = []
+
+    if isinstance(value, Mapping):
+        range_clause = value.get("range")
+        if isinstance(range_clause, Mapping):
+            timestamp_clause = range_clause.get("@timestamp")
+            if isinstance(timestamp_clause, Mapping):
+                start = _parse_timestamp(timestamp_clause.get("gte"))
+                end = _parse_timestamp(timestamp_clause.get("lt"))
+                if start is not None and end is not None and end > start:
+                    found.append((start, end))
+
+        for child in value.values():
+            found.extend(_find_timestamp_ranges(child))
+
+    elif isinstance(value, list):
+        for child in value:
+            found.extend(_find_timestamp_ranges(child))
+
+    return found
+
+
+def _intervals_cover_window(intervals, required_start, required_end):
+    """Return True only when intervals continuously cover the required window."""
+    valid = [
+        (start, end)
+        for start, end in intervals
+        if start < end
+    ]
+    valid.sort(key=lambda interval: interval[0])
+
+    if not valid:
+        return False
+
+    covered_until = required_start
+
+    for start, end in valid:
+        if end <= covered_until:
+            continue
+
+        if start > covered_until:
+            return False
+
+        covered_until = max(covered_until, end)
+
+        if covered_until >= required_end:
+            return True
+
+    return False
+
+
+def _validate_investigation_coverage(
+    ledger_records,
+    responses,
+    run_id,
+    required_sources,
+    investigation_window,
+):
+    """Validate actual successful, complete queries against required scope."""
+    blockers = []
+
+    if (
+        not isinstance(required_sources, (list, tuple))
+        or not required_sources
+        or len(set(required_sources)) != len(required_sources)
+        or any(source not in SOURCE_INDICES for source in required_sources)
+    ):
+        raise ValueError(
+            "required_sources must be a non-empty list of unique supported indices"
+        )
+
+    required_start = _parse_timestamp(investigation_window.get("start"))
+    required_end = _parse_timestamp(investigation_window.get("end"))
+
+    if (
+        required_start is None
+        or required_end is None
+        or required_end <= required_start
+    ):
+        raise ValueError(
+            "investigation_window must contain valid timezone-aware start/end"
+        )
+
+    response_by_seq = {
+        item.get("ledger_seq"): item
+        for item in responses
+        if isinstance(item, Mapping)
+    }
+
+    intervals_by_source = {source: [] for source in required_sources}
+    query_counts = {source: 0 for source in required_sources}
+
+    for row in ledger_records:
+        if not isinstance(row, Mapping):
+            continue
+        if row.get("run_id") != run_id or row.get("status") != "ok":
+            continue
+
+        response = response_by_seq.get(row.get("seq"))
+        if not isinstance(response, Mapping):
+            continue
+
+        tool_name = response.get("tool")
+        if tool_name not in HUNT_TOOLS:
+            continue
+
+        result = response.get("result")
+        if not isinstance(result, Mapping):
+            continue
+        if not _result_complete(tool_name, result):
+            continue
+
+        query = row.get("query")
+        requests = []
+
+        if isinstance(query, Mapping):
+            request = query.get("request")
+            if isinstance(request, Mapping):
+                requests.append(request)
+
+            sequence_requests = query.get("requests")
+            if isinstance(sequence_requests, list):
+                requests.extend(
+                    item for item in sequence_requests
+                    if isinstance(item, Mapping)
+                )
+
+        for request in requests:
+            source = request.get("index")
+            if source not in intervals_by_source:
+                continue
+
+            body = request.get("body")
+            for start, end in _find_timestamp_ranges(body):
+                clipped_start = max(start, required_start)
+                clipped_end = min(end, required_end)
+
+                if clipped_start < clipped_end:
+                    intervals_by_source[source].append(
+                        (clipped_start, clipped_end)
+                    )
+                    query_counts[source] += 1
+
+    source_results = {}
+
+    for source in required_sources:
+        covered = _intervals_cover_window(
+            intervals_by_source[source],
+            required_start,
+            required_end,
+        )
+
+        source_results[source] = {
+            "covered": covered,
+            "complete_query_count": query_counts[source],
+        }
+
+        if not covered:
+            blockers.append(
+                f"Actual investigation queries do not completely cover "
+                f"the required window for source '{source}'"
+            )
+
+    return {
+        "required_sources": list(required_sources),
+        "required_window": dict(investigation_window),
+        "complete": not blockers,
+        "sources": source_results,
+        "blockers": blockers,
+    }
+
+
 class HuntWorkflow:
     """Run a supplied investigation plan and export its evidence trail.
 
@@ -140,19 +331,21 @@ class HuntWorkflow:
                 "Configure M4's EvidenceLedger at output_dir/ledger.jsonl"
             )
 
-        if not self.ledger_path.exists():
-            raise ValueError("M4 must initialize ledger.jsonl before the hunt")
-
-        if _read_jsonl(self.ledger_path):
-            raise ValueError(
-                "Each hunt needs a fresh, empty M4 ledger and a unique output folder"
-            )
 
         for name in ("responses.jsonl", "run.json", "report.md"):
             if (self.output_dir / name).exists():
                 raise FileExistsError(
                     f"{name} already exists; choose a fresh output folder"
                 )
+
+        if not self.ledger_path.exists():
+            self.ledger_path.touch(exist_ok=False)
+
+        if _read_jsonl(self.ledger_path):
+            raise ValueError(
+                "Each hunt needs a fresh, empty M4 ledger and a unique output folder"
+            )
+
 
         config = getattr(tools, "cfg", None)
         if config is None or getattr(config, "run_id", None) != run_id:
@@ -338,6 +531,7 @@ class HuntWorkflow:
         plan: list[dict],
         claim_drafts: list[dict],
         *,
+        required_sources: list[str],
         supporting_claim_ids: list[str],
         contradicting_claim_ids: list[str],
         alternatives_tested: bool,
@@ -498,16 +692,29 @@ class HuntWorkflow:
             expected_run_id=self.run_id,
         )
 
+        investigation_coverage = _validate_investigation_coverage(
+            ledger_records=ledger_records,
+            responses=self.responses,
+            run_id=self.run_id,
+            required_sources=required_sources,
+            investigation_window=self.investigation_window,
+        )
+
         all_questions_complete = all(
             item["status"] == "complete" for item in plan_records
         )
-        investigation_complete = all_questions_complete and not invalid_draft
+        investigation_complete = (
+            all_questions_complete
+            and not invalid_draft
+            and investigation_coverage["complete"]
+        )
 
         report = build_run_report(
             **self.metadata,
             runtime_seconds=time.monotonic() - began,
             source_coverage=self.source_coverage,
             investigation_window=self.investigation_window,
+            investigation_coverage=investigation_coverage,
             plan=plan_records,
             claims=claims,
             verifier=verifier,
