@@ -1,0 +1,8 @@
+{
+  "experiment_kind": "typed_api_smoke",
+  "model": "none: deterministic M4 ToolSet smoke, no agent",
+  "model_parameters": {},
+  "prompt_version": "m6-smoke-protocol-v2",
+  "schema_version": "tracehunt-schema-1.0.0",
+  "index_snapshot": "finite M3-normalized fixture, byte-verified locally"
+}

@@ -1,0 +1,32 @@
+﻿Metric,Run A,Run B,Comparison
+archive_only_fetch_ids,0,0,
+archived_citation_coverage,1.0,1.0,
+backend,fixture,fixture,
+citation_linkage,1.0,1.0,
+citation_note,Ledger linkage may be incomplete after truncation. Archive coverage is separate; neither proves semantic support.,Ledger linkage may be incomplete after truncation. Archive coverage is separate; neither proves semantic support.,
+claim_count,4,4,
+coverage_note,Query intervals and declared coverage do not prove real collector continuity.,Query intervals and declared coverage do not prove real collector continuity.,
+declared_time_window_coverage,"{""sysmon"":true,""windows-security"":true,""zeek"":true}","{""sysmon"":true,""windows-security"":true,""zeek"":true}",
+executed_allowlist_violations,[],[],
+incomplete_tool_results,[],[],
+ledger_ids_truncated,False,False,
+model_usage,Not measured,Not measured,
+plan_completion,1.0,1.0,
+queried_source_coverage,1.0,1.0,
+query_window_coverage,"{""sysmon"":true,""windows-security"":true,""zeek"":true}","{""sysmon"":true,""windows-security"":true,""zeek"":true}",
+rejected_outside_allowlist,[],[],
+response_archive_complete,True,True,
+run_id,m6-v4-smoke-a,m6-v4-smoke-b,
+run_kind,typed_api_smoke,typed_api_smoke,
+runtime_seconds,0.018695283999988987,0.024052558999983376,
+summary_completeness_consistent,True,True,
+tool_calls,15,15,
+tool_errors,0,0,
+tool_results_complete,True,True,
+truncated_fetch_sequences,[],[],
+verdict,inconclusive,inconclusive,
+verdict_agreement,,,True
+query_jaccard,,,1.0
+evidence_jaccard,,,1.0
+claim_exact_jaccard,,,1.0
+assessment_status,,,metrics_only_requires_human_review

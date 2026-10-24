@@ -1,0 +1,295 @@
+[
+  {
+    "source": "windows-security",
+    "summary": {
+      "processed": 12,
+      "accepted": 12,
+      "quarantined": 0,
+      "created_schemas": 0
+    },
+    "decisions": [
+      {
+        "source": "windows-security",
+        "signature": [
+          "@timestamp",
+          "event.code",
+          "event.dataset",
+          "event.provider",
+          "host.name",
+          "raw_xml",
+          "source_type",
+          "winlog.channel",
+          "winlog.computer_name",
+          "winlog.event_data.IpAddress",
+          "winlog.event_data.IpPort",
+          "winlog.event_data.LogonType",
+          "winlog.event_data.Status",
+          "winlog.event_data.TargetDomainName",
+          "winlog.event_data.TargetUserName",
+          "winlog.event_id",
+          "winlog.provider_name",
+          "winlog.record_id"
+        ],
+        "positions": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "states": [
+          "inspect",
+          "classify",
+          "select",
+          "apply"
+        ],
+        "attempts": [],
+        "decision": "reuse",
+        "schema_id": "windows-security",
+        "schema_version": "1.0.0",
+        "accepted": 9,
+        "quarantined": 0
+      },
+      {
+        "source": "windows-security",
+        "signature": [
+          "@timestamp",
+          "event.code",
+          "event.dataset",
+          "event.provider",
+          "host.name",
+          "raw_xml",
+          "source_type",
+          "winlog.channel",
+          "winlog.computer_name",
+          "winlog.event_data.IpAddress",
+          "winlog.event_data.LogonType",
+          "winlog.event_data.TargetUserName",
+          "winlog.event_id",
+          "winlog.provider_name",
+          "winlog.record_id"
+        ],
+        "positions": [
+          9,
+          10,
+          11
+        ],
+        "states": [
+          "inspect",
+          "classify",
+          "select",
+          "apply"
+        ],
+        "attempts": [],
+        "decision": "reuse",
+        "schema_id": "windows-security",
+        "schema_version": "1.0.0",
+        "accepted": 3,
+        "quarantined": 0
+      }
+    ]
+  },
+  {
+    "source": "sysmon",
+    "summary": {
+      "processed": 4,
+      "accepted": 4,
+      "quarantined": 0,
+      "created_schemas": 0
+    },
+    "decisions": [
+      {
+        "source": "sysmon",
+        "signature": [
+          "@timestamp",
+          "event.code",
+          "event.dataset",
+          "event.provider",
+          "host.name",
+          "raw_xml",
+          "source_type",
+          "winlog.channel",
+          "winlog.computer_name",
+          "winlog.event_data.CommandLine",
+          "winlog.event_data.Image",
+          "winlog.event_data.ParentImage",
+          "winlog.event_data.ParentProcessId",
+          "winlog.event_data.ProcessGuid",
+          "winlog.event_data.ProcessId",
+          "winlog.event_data.User",
+          "winlog.event_id",
+          "winlog.provider_name",
+          "winlog.record_id"
+        ],
+        "positions": [
+          0
+        ],
+        "states": [
+          "inspect",
+          "classify",
+          "select",
+          "apply"
+        ],
+        "attempts": [],
+        "decision": "reuse",
+        "schema_id": "sysmon",
+        "schema_version": "1.0.0",
+        "accepted": 1,
+        "quarantined": 0
+      },
+      {
+        "source": "sysmon",
+        "signature": [
+          "@timestamp",
+          "event.code",
+          "event.dataset",
+          "event.provider",
+          "host.name",
+          "raw_xml",
+          "source_type",
+          "winlog.channel",
+          "winlog.computer_name",
+          "winlog.event_data.CommandLine",
+          "winlog.event_data.Image",
+          "winlog.event_data.User",
+          "winlog.event_id",
+          "winlog.provider_name",
+          "winlog.record_id"
+        ],
+        "positions": [
+          1,
+          2,
+          3
+        ],
+        "states": [
+          "inspect",
+          "classify",
+          "select",
+          "apply"
+        ],
+        "attempts": [],
+        "decision": "reuse",
+        "schema_id": "sysmon",
+        "schema_version": "1.0.0",
+        "accepted": 3,
+        "quarantined": 0
+      }
+    ]
+  },
+  {
+    "source": "zeek",
+    "summary": {
+      "processed": 4,
+      "accepted": 4,
+      "quarantined": 0,
+      "created_schemas": 0
+    },
+    "decisions": [
+      {
+        "source": "zeek",
+        "signature": [
+          "event.dataset",
+          "host",
+          "id.orig_h",
+          "id.orig_p",
+          "id.resp_h",
+          "id.resp_p",
+          "log_type",
+          "method",
+          "raw_line",
+          "source_type",
+          "status_code",
+          "ts",
+          "uid",
+          "uri",
+          "user_agent"
+        ],
+        "positions": [
+          0
+        ],
+        "states": [
+          "inspect",
+          "classify",
+          "select",
+          "apply"
+        ],
+        "attempts": [],
+        "decision": "reuse",
+        "schema_id": "zeek",
+        "schema_version": "1.0.0",
+        "accepted": 1,
+        "quarantined": 0
+      },
+      {
+        "source": "zeek",
+        "signature": [
+          "event.dataset",
+          "host",
+          "id.orig_h",
+          "id.orig_p",
+          "id.resp_h",
+          "id.resp_p",
+          "log_type",
+          "method",
+          "raw_line",
+          "source_type",
+          "status_code",
+          "ts",
+          "uid",
+          "uri"
+        ],
+        "positions": [
+          1
+        ],
+        "states": [
+          "inspect",
+          "classify",
+          "select",
+          "apply"
+        ],
+        "attempts": [],
+        "decision": "reuse",
+        "schema_id": "zeek",
+        "schema_version": "1.0.0",
+        "accepted": 1,
+        "quarantined": 0
+      },
+      {
+        "source": "zeek",
+        "signature": [
+          "event.dataset",
+          "id.orig_h",
+          "id.resp_h",
+          "id.resp_p",
+          "log_type",
+          "method",
+          "raw_line",
+          "source_type",
+          "ts",
+          "uid",
+          "uri"
+        ],
+        "positions": [
+          2,
+          3
+        ],
+        "states": [
+          "inspect",
+          "classify",
+          "select",
+          "apply"
+        ],
+        "attempts": [],
+        "decision": "reuse",
+        "schema_id": "zeek",
+        "schema_version": "1.0.0",
+        "accepted": 2,
+        "quarantined": 0
+      }
+    ]
+  }
+]

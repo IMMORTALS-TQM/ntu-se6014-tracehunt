@@ -1,0 +1,100 @@
+{
+  "schema_version": 3,
+  "dataset_id": "b8fbac33615636ba3cc137768ecffa6fad6b42f9921ceb609eea4d847ab5101f",
+  "freeze_id": "c1bc36bd6d3d30523215ff2c2eaf897ca5a0d266087f4cc3d437e3d234c6151d",
+  "run_kind": "typed_api_smoke",
+  "verdict_agreement": true,
+  "query_jaccard": 1.0,
+  "evidence_jaccard": 1.0,
+  "claim_exact_jaccard": 1.0,
+  "claim_note": "Stable claim ID and exact statement match, not semantic equivalence.",
+  "assessment_status": "metrics_only_requires_human_review",
+  "differences": {
+    "queries": {
+      "only_a": [],
+      "only_b": []
+    },
+    "evidence": {
+      "only_a": [],
+      "only_b": []
+    },
+    "claims": {
+      "only_a": [],
+      "only_b": []
+    }
+  },
+  "runs": [
+    {
+      "run_id": "m6-v4-smoke-a",
+      "run_kind": "typed_api_smoke",
+      "backend": "fixture",
+      "verdict": "inconclusive",
+      "queried_source_coverage": 1.0,
+      "query_window_coverage": {
+        "windows-security": true,
+        "sysmon": true,
+        "zeek": true
+      },
+      "declared_time_window_coverage": {
+        "windows-security": true,
+        "sysmon": true,
+        "zeek": true
+      },
+      "coverage_note": "Query intervals and declared coverage do not prove real collector continuity.",
+      "citation_linkage": 1.0,
+      "archived_citation_coverage": 1.0,
+      "truncated_fetch_sequences": [],
+      "archive_only_fetch_ids": 0,
+      "citation_note": "Ledger linkage may be incomplete after truncation. Archive coverage is separate; neither proves semantic support.",
+      "plan_completion": 1.0,
+      "claim_count": 4,
+      "tool_calls": 15,
+      "tool_errors": 0,
+      "response_archive_complete": true,
+      "incomplete_tool_results": [],
+      "tool_results_complete": true,
+      "summary_completeness_consistent": true,
+      "ledger_ids_truncated": false,
+      "executed_allowlist_violations": [],
+      "rejected_outside_allowlist": [],
+      "runtime_seconds": 0.018695283999988987,
+      "model_usage": null
+    },
+    {
+      "run_id": "m6-v4-smoke-b",
+      "run_kind": "typed_api_smoke",
+      "backend": "fixture",
+      "verdict": "inconclusive",
+      "queried_source_coverage": 1.0,
+      "query_window_coverage": {
+        "windows-security": true,
+        "sysmon": true,
+        "zeek": true
+      },
+      "declared_time_window_coverage": {
+        "windows-security": true,
+        "sysmon": true,
+        "zeek": true
+      },
+      "coverage_note": "Query intervals and declared coverage do not prove real collector continuity.",
+      "citation_linkage": 1.0,
+      "archived_citation_coverage": 1.0,
+      "truncated_fetch_sequences": [],
+      "archive_only_fetch_ids": 0,
+      "citation_note": "Ledger linkage may be incomplete after truncation. Archive coverage is separate; neither proves semantic support.",
+      "plan_completion": 1.0,
+      "claim_count": 4,
+      "tool_calls": 15,
+      "tool_errors": 0,
+      "response_archive_complete": true,
+      "incomplete_tool_results": [],
+      "tool_results_complete": true,
+      "summary_completeness_consistent": true,
+      "ledger_ids_truncated": false,
+      "executed_allowlist_violations": [],
+      "rejected_outside_allowlist": [],
+      "runtime_seconds": 0.024052558999983376,
+      "model_usage": null
+    }
+  ]
+}

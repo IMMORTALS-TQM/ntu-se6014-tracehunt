@@ -1,0 +1,8 @@
+{
+  "experiment_kind": "agent",
+  "model": "REPLACE_ME_actual_model_revision",
+  "model_parameters": {},
+  "prompt_version": "REPLACE_ME_actual_prompt_revision",
+  "schema_version": "tracehunt-schema-1.0.0",
+  "index_snapshot": "REPLACE_ME_exact_index_snapshot_or_export_hash"
+}

@@ -1,0 +1,35 @@
+name: M6 experiment checks
+
+on:
+  push:
+    branches: [main, 'm6/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  m6-tests:
+    name: M6 Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.11', '3.12']
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run the M6 suite including review regressions
+        run: python -m unittest discover -s m6-experiment/tests -v
+      - name: Run M3 compatibility checks
+        run: python -m unittest discover -s m3-schema/tests -v

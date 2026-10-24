@@ -1,0 +1,6 @@
+[project]
+name = "tracehunt-experiment"
+version = "4.0.0"
+description = "SE6014 M6 experiment preparation and evidence comparison"
+requires-python = ">=3.11"
+dependencies = []

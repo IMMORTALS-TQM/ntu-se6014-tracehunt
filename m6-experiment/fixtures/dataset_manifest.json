@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "files": {
+    "normalized/bulk.ndjson": "5b7f718f4633f2a19e88adc04d38299e19e2456b6f4636188332a0cbaf47ef55",
+    "normalized/events.jsonl": "e5492e2133ef2e7d9900e8a8e9ccb27136e72511467f86278de6e2fe73c5896d",
+    "raw/sysmon.ndjson": "cd396a9920993818389e425719da80abcf02722e30bcadfafc65546e31d7910f",
+    "raw/windows-security.ndjson": "c83fc77a378c49bd6710c2d2260302cdd6f1c5a4fa245feb68ec5e9085f18422",
+    "raw/zeek.ndjson": "c7ce7bed0e098ca2f2d17c0cfe50587ad9ea2368e139c7b144db8dc8fa4afd3e",
+    "registry/custom-3ef037cacc9ed829-1.0.0.json": "c745c5f54945b9c69ca4d6fd8868e1256ad2039ae2ec0c866caf668e0640ba81",
+    "scenario.json": "dcb87f8f3ab276d91313b7d772b8ba5d5ae915852064553b8a6657c0a53faf9b",
+    "schema/config.json": "07d23dc99561c5b590b52aa5640685d29017acb7a0607685bdb45d004b04a444",
+    "schema/fallback_audit.json": "6f5059d111df90b84787b58933d4a89b9105b9fb8ed85423ce8fae01ef08765b",
+    "schema/fallback_events.jsonl": "f5c565f90ebd5fc9cc75dc0799f27e3f247546bb3957f2126dc92653a70f8f2d",
+    "schema/known_audit.json": "677695e5ea26585072f3a3e527cf596e7008fc87f25fdacd78929461f618fefe",
+    "schema/quarantine.jsonl": "1bdb92c807f572f9b2e590f34f2356190ef26f01ba845b0cccc3337b8c236a7d",
+    "schema/unknown.ndjson": "0538d25bcb6284a92d317a4d0d9c72aff72b458c7c8fe3a0c9fa32c3236d33d6"
+  },
+  "counts": {
+    "windows-security": 12,
+    "sysmon": 4,
+    "zeek": 4
+  },
+  "dataset_id": "b8fbac33615636ba3cc137768ecffa6fad6b42f9921ceb609eea4d847ab5101f"
+}

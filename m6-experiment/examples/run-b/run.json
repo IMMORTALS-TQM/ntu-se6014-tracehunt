@@ -1,0 +1,176 @@
+{
+  "schema_version": 3,
+  "run_id": "m6-v4-smoke-b",
+  "run_kind": "typed_api_smoke",
+  "m4_limits": {
+    "indices": [
+      "windows-security",
+      "sysmon",
+      "zeek"
+    ],
+    "default_size": 50,
+    "max_size": 500,
+    "max_window_hours": 72,
+    "request_timeout_s": 10,
+    "max_scan": 2000,
+    "max_doc_ids": 50,
+    "max_seq_steps": 5,
+    "max_agg_buckets": 100
+  },
+  "backend": "fixture",
+  "dataset_id": "b8fbac33615636ba3cc137768ecffa6fad6b42f9921ceb609eea4d847ab5101f",
+  "freeze_id": "c1bc36bd6d3d30523215ff2c2eaf897ca5a0d266087f4cc3d437e3d234c6151d",
+  "verdict": "inconclusive",
+  "verdict_basis": "M6 smoke checks typed tool integration, not M5 hypothesis verification.",
+  "claims": [
+    {
+      "id": "failed-logons",
+      "statement": "Failed logon evidence for lab-user occurred on WS-01.",
+      "citations": [
+        {
+          "index": "windows-security",
+          "doc_id": "2397fc291dadf058603786395927051eed0d8e7c15739792cac68f36bad6b7f3",
+          "ledger_seq": 6
+        },
+        {
+          "index": "windows-security",
+          "doc_id": "7622f34f625b1f7bbcc439004673dc28897e43c51ad8e75fd125ff1e717b740c",
+          "ledger_seq": 6
+        },
+        {
+          "index": "windows-security",
+          "doc_id": "77c1bdef2dab9a71eee255c23339726a448299e53bd4e7a6b3a13fcb982f381e",
+          "ledger_seq": 6
+        },
+        {
+          "index": "windows-security",
+          "doc_id": "14bfeb955b0c7e826455b063b4475fe486078c1d2148cb9ff18fcd29ce3a392c",
+          "ledger_seq": 6
+        },
+        {
+          "index": "windows-security",
+          "doc_id": "48d0f8484a93c40b2ecc804bafab9633c13d004a3ee49a9d42b844935f5e6494",
+          "ledger_seq": 6
+        },
+        {
+          "index": "windows-security",
+          "doc_id": "55649b48416fff48381bc91614a993cfc5f333a3b8898ce77692a53af6513fd8",
+          "ledger_seq": 6
+        },
+        {
+          "index": "windows-security",
+          "doc_id": "54ff0e1aa3d0276dbfbb220018c95cc3cf3693fb117d1d142d5a1a5aca04ed62",
+          "ledger_seq": 6
+        },
+        {
+          "index": "windows-security",
+          "doc_id": "2b59f6fdc87cc3c89172987bd40299d978d6f0ce28b612cd9b6c290384ef6f4d",
+          "ledger_seq": 6
+        }
+      ]
+    },
+    {
+      "id": "successful-logon",
+      "statement": "A successful network logon for lab-user occurred on WS-01.",
+      "citations": [
+        {
+          "index": "windows-security",
+          "doc_id": "bafe71899258ea54f6595847d0f7a2c7cd559dd4991ee572e201692a4bd9748d",
+          "ledger_seq": 8
+        }
+      ]
+    },
+    {
+      "id": "encoded-process",
+      "statement": "A PowerShell process for lab-user occurred on WS-01; inspect its command line for the encoded flag.",
+      "citations": [
+        {
+          "index": "sysmon",
+          "doc_id": "8a9b51ab4c41cece7df3c14fd123955938ad69124eefd41c742d72444b73e053",
+          "ledger_seq": 10
+        }
+      ]
+    },
+    {
+      "id": "network",
+      "statement": "The workstation IP connected to the lab server. Process attribution is unproven.",
+      "citations": [
+        {
+          "index": "zeek",
+          "doc_id": "9e74dabcf722abcbdc14219387a4004f1ae0ee65a1533d07b0156948bf112ec0",
+          "ledger_seq": 12
+        }
+      ]
+    }
+  ],
+  "source_coverage": {
+    "windows-security": {
+      "start": "2026-10-23T14:00:00+08:00",
+      "end": "2026-10-23T14:30:00+08:00",
+      "complete": true,
+      "basis": "finite_fixture"
+    },
+    "sysmon": {
+      "start": "2026-10-23T14:00:00+08:00",
+      "end": "2026-10-23T14:30:00+08:00",
+      "complete": true,
+      "basis": "finite_fixture"
+    },
+    "zeek": {
+      "start": "2026-10-23T14:00:00+08:00",
+      "end": "2026-10-23T14:30:00+08:00",
+      "complete": true,
+      "basis": "finite_fixture"
+    }
+  },
+  "runtime_seconds": 0.024052558999983376,
+  "model_usage": null,
+  "plan": [
+    {
+      "id": "failed-logons",
+      "index": "windows-security",
+      "status": "complete",
+      "ledger_seq": 5
+    },
+    {
+      "id": "successful-logon",
+      "index": "windows-security",
+      "status": "complete",
+      "ledger_seq": 7
+    },
+    {
+      "id": "encoded-process",
+      "index": "sysmon",
+      "status": "complete",
+      "ledger_seq": 9
+    },
+    {
+      "id": "network",
+      "index": "zeek",
+      "status": "complete",
+      "ledger_seq": 11
+    }
+  ],
+  "incomplete_tool_results": [],
+  "tool_results_complete": true,
+  "source_bounds": {
+    "windows-security": {
+      "index": "windows-security",
+      "earliest": "2026-10-23T05:55:00.000000Z",
+      "latest": "2026-10-23T06:35:00.000000Z",
+      "doc_count": 12
+    },
+    "sysmon": {
+      "index": "sysmon",
+      "earliest": "2026-10-23T05:55:00.000000Z",
+      "latest": "2026-10-23T06:35:00.000000Z",
+      "doc_count": 4
+    },
+    "zeek": {
+      "index": "zeek",
+      "earliest": "2026-10-23T05:55:00.000000Z",
+      "latest": "2026-10-23T06:35:00.000000Z",
+      "doc_count": 4
+    }
+  }
+}

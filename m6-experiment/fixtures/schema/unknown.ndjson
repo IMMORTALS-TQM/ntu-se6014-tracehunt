@@ -1,0 +1,2 @@
+{"account":"fixture-user","event_time":"2026-10-23T14:00:00+08:00","machine":"CUSTOM-01","note":"fallback fixture","target_ip":"10.10.10.50","target_port":8080}
+{"account":"fixture-user","event_time":"2026-10-23T14:30:00+08:00","machine":"CUSTOM-02","note":"fallback fixture","target_ip":"10.10.10.60","target_port":80}
